@@ -27,6 +27,12 @@ func resourceDatadogApplicationKey() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
+			"scopes": {
+				Description: "Authorization scopes for the Application Key. Application Keys configured with no scopes have full access.",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
 			"key": {
 				Description: "The value of the Application Key.",
 				Type:        schema.TypeString,
@@ -39,6 +45,14 @@ func resourceDatadogApplicationKey() *schema.Resource {
 
 func buildDatadogApplicationKeyCreateV2Struct(d *schema.ResourceData) *datadogV2.ApplicationKeyCreateRequest {
 	applicationKeyAttributes := datadogV2.NewApplicationKeyCreateAttributes(d.Get("name").(string))
+	ddScope := make([]string, 0)
+	if tfScopes, ok := d.GetOk("scopes"); ok {
+		for _, s := range tfScopes.(*schema.Set).List() {
+			ddScope = append(ddScope, s.(string))
+		}
+		applicationKeyAttributes.SetScopes(ddScope)
+	}
+	applicationKeyAttributes.SetScopes(ddScope)
 	applicationKeyData := datadogV2.NewApplicationKeyCreateData(*applicationKeyAttributes, datadogV2.APPLICATIONKEYSTYPE_APPLICATION_KEYS)
 	applicationKeyRequest := datadogV2.NewApplicationKeyCreateRequest(*applicationKeyData)
 
@@ -48,6 +62,14 @@ func buildDatadogApplicationKeyCreateV2Struct(d *schema.ResourceData) *datadogV2
 func buildDatadogApplicationKeyUpdateV2Struct(d *schema.ResourceData) *datadogV2.ApplicationKeyUpdateRequest {
 	applicationKeyAttributes := datadogV2.NewApplicationKeyUpdateAttributes()
 	applicationKeyAttributes.SetName(d.Get("name").(string))
+	ddScope := make([]string, 0)
+	if tfScopes, ok := d.GetOk("scopes"); ok {
+		for _, s := range tfScopes.(*schema.Set).List() {
+			ddScope = append(ddScope, s.(string))
+		}
+		applicationKeyAttributes.SetScopes(ddScope)
+	}
+	applicationKeyAttributes.SetScopes(ddScope)
 	applicationKeyData := datadogV2.NewApplicationKeyUpdateData(*applicationKeyAttributes, d.Id(), datadogV2.APPLICATIONKEYSTYPE_APPLICATION_KEYS)
 	applicationKeyRequest := datadogV2.NewApplicationKeyUpdateRequest(*applicationKeyData)
 
@@ -58,6 +80,9 @@ func updateApplicationKeyState(d *schema.ResourceData, applicationKeyData *datad
 	applicationKeyAttributes := applicationKeyData.GetAttributes()
 
 	if err := d.Set("name", applicationKeyAttributes.GetName()); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("scopes", applicationKeyAttributes.GetScopes()); err != nil {
 		return diag.FromErr(err)
 	}
 	if err := d.Set("key", applicationKeyAttributes.GetKey()); err != nil {

@@ -26,7 +26,12 @@ func dataSourceDatadogApplicationKey() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
-
+			"scopes": {
+				Description: "Authorization scopes for the Application Key.",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
 			// Computed values
 			"key": {
 				Description: "The value of the Application Key.",
